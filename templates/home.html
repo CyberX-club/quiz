@@ -1,19 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Quiz Home</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-</head>
-<body>
-    <div class="container mt-5">
-        <h2>Welcome to the Quiz</h2>
-        <p>Please read the following guidelines before starting the quiz:</p>
-        <ul>
-            <li>Each question will have a time limit.</li>
-            <li>Ensure stable internet connectivity during the quiz.</li>
-            <li>Once you start, you cannot retake the quiz.</li>
-        </ul>
-        <a href="{{ url_for('quiz') }}" class="btn btn-primary">Start Quiz</a>
-    </div>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Quiz Home{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Welcome to the Quiz</h2>
+    <p>Please read the following guidelines before starting the quiz:</p>
+    <ul>
+        <li>Each question will have a time limit.</li>
+        <li>Ensure stable internet connectivity during the quiz.</li>
+        <li>Once you start, you cannot retake the quiz.</li>
+    </ul>
+</div>
+{% endblock %}

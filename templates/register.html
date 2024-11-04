@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Register</h2>
+
+    <!-- Alert Messages -->
+    {% if alert_message %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        {{ alert_message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <form action="{{ url_for('register') }}" method="POST">
+        <!-- Name Field -->
+        <div class="form-group">
+            <label for="name">Full Name</label>
+            <input
+                type="text"
+                class="form-control"
+                id="name"
+                name="name"
+                required
+            />
+        </div>
+
+        <!-- Username Field -->
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input
+                type="text"
+                class="form-control"
+                id="username"
+                name="username"
+                required
+            />
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input
+                type="password"
+                class="form-control"
+                id="password"
+                name="password"
+                required
+            />
+        </div>
+
+        <!-- User Type Field -->
+        <div class="form-group">
+            <label for="user_type">User Type</label>
+            <select
+                class="form-control"
+                id="user_type"
+                name="user_type"
+                required
+            >
+                <option value="normal">Normal</option>
+                <option value="admin">Admin</option>
+            </select>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-primary">Register</button>
+    </form>
+</div>
+{% endblock %}

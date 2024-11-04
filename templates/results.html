@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Results - Cybersecurity Prelims{% endblock %}
+
+{% block content %}
+<h1 class="mb-4 text-white">Submission Results</h1>
+
+{% if results %}
+    {% for result in results %}
+        <h2 class="mt-5 mb-3 text-white">User: {{ result.username }}</h2>
+        <div class="accordion accordion-dark" id="accordion-{{ result.username }}">
+            {% for question in result.questions %}
+                <div class="accordion-item bg-dark border-secondary">
+                    <h3 class="accordion-header" id="heading-{{ result.username }}-{{ question.number }}">
+                        <button class="accordion-button bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ result.username }}-{{ question.number }}" aria-expanded="false" aria-controls="collapse-{{ result.username }}-{{ question.number }}">
+                            Question {{ question.number }} - {% if question.answer != None %}{{ question.answer|truncate(50, True) }}{% else %}Not answered{% endif %}
+                        </button>
+                    </h3>
+                    <div id="collapse-{{ result.username }}-{{ question.number }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ result.username }}-{{ question.number }}" data-bs-parent="#accordion-{{ result.username }}">
+                        <div class="accordion-body bg-dark text-white">
+                            <table class="table table-dark mb-0">
+                                <tbody>
+                                    <tr>
+                                        <th>Answer</th>
+                                        <td>{{ question.answer if question.answer != None else 'Not answered' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Type</th>
+                                        <td>{{ question.type }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Completed</th>
+                                        <td>{{ 'Yes' if question.completed else 'No' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Time Spent</th>
+                                        <td>{{ question.timeSpent }} seconds</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+{% else %}
+    <p class="alert alert-dark text-white">No results found.</p>
+{% endif %}
+{% endblock %}

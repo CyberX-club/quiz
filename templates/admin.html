@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel{% endblock %}
+
+{% block content %}
+<div class="list-group mt-4">
+    <a href="{{ url_for('users') }}" class="list-group-item list-group-item-action">View All Users</a>
+    <a href="{{ url_for('register') }}" class="list-group-item list-group-item-action">Register New User</a>
+    <a href="{{ url_for('results') }}" class="list-group-item list-group-item-action">View Quiz Results</a>
+</div>
+
+{% endblock %}

@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+{% block title %}Quiz{% endblock %}
+
+{% block content %}
+<div class="container-fluid h-100 d-flex flex-column">
+    <!-- Start Quiz Section -->
+    <div id="start-section" class="text-center my-auto">
+        <h2>Ready to start the quiz?</h2>
+        <p>You'll have different time limits for each question. Make sure you're ready before starting!</p>
+        <button id="start-quiz" class="btn btn-primary btn-lg">Start Quiz</button>
+    </div>
+
+    <!-- Quiz Section (Initially Hidden) -->
+    <div id="quiz-section" class="flex-grow-1" style="display: none; overflow-y: auto;">
+        <!-- Progress Display -->
+        <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3>Question <span id="current-question">1</span> of <span id="total-questions">3</span></h3>
+                <span class="text-muted">Completed: <span id="questions-completed">0</span> questions</span>
+            </div>
+            <div class="progress mb-2" style="height: 20px;">
+                <div id="questions-progress" class="progress-bar bg-success" role="progressbar" style="width: 0%" 
+                     aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+
+        <!-- Timer Display -->
+        <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4>Time Remaining: <span id="timer" class="text-danger">60</span> seconds</h4>
+            </div>
+            <div class="progress" style="height: 20px;">
+                <div id="timer-progress" class="progress-bar" role="progressbar" style="width: 100%" 
+                     aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+
+        <!-- Carousel -->
+        <div id="quizCarousel" class="carousel slide" data-bs-interval="false">
+            <div class="carousel-inner">
+                {% for question in questions %}
+                <div class="carousel-item {% if loop.first %}active{% endif %}" data-question-index="{{ loop.index0 }}">
+                    <div class="card bg-dark text-light h-100">
+                        <img src="{{ question.image }}" class="card-img-top" alt="Question Image">
+                        <div class="card-body">
+                            {% if question.type == 'mcq' %}
+                            <div class="options-container">
+                                {% set outer_loop = loop %}
+                                {% for option in question.options %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" 
+                                           type="radio" 
+                                           name="question_{{ outer_loop.index0 }}" 
+                                           id="q{{ outer_loop.index0 }}_option{{ loop.index }}" 
+                                           value="{{ option }}">
+                                    <label class="form-check-label" for="q{{ outer_loop.index0 }}_option{{ loop.index }}">
+                                        {{ option }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% elif question.type == 'short_ans' %}
+                            <input type="text" class="form-control" name="question_{{ loop.index0 }}" placeholder="Your answer">
+                            {% elif question.type == 'long_ans' %}
+                            <textarea class="form-control" name="question_{{ loop.index0 }}" rows="4" placeholder="Your answer"></textarea>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="mt-3 d-flex justify-content-between">
+                <button class="btn btn-secondary" id="prev-button" onclick="prevQuestion()">Previous</button>
+                <button class="btn btn-primary" id="next-button" onclick="nextQuestion()">Next</button>
+                <button class="btn btn-success" id="submit-button" style="display: none;" onclick="submitQuiz()">Submit Quiz</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentQuestionIndex = 0;
+const questions = {{ questions|tojson|safe }};
+let timer;
+let carouselInstance;
+
+// Store time data for each question
+const questionData = questions.map(q => ({
+    timeLeft: q.timeout || 60,
+    startTime: null,
+    timeSpent: 0,
+    completed: false,
+    totalTime: q.timeout || 60,  // Store initial time for progress calculation
+    hasAnswer: false  // Track if question has been answered
+}));
+
+function updateQuestionProgress() {
+    const completedCount = questionData.filter(q => q.completed || q.hasAnswer).length;
+    const progressPercentage = (completedCount / questions.length) * 100;
+    
+    document.getElementById('questions-completed').textContent = completedCount;
+    const progressBar = document.getElementById('questions-progress');
+    progressBar.style.width = `${progressPercentage}%`;
+    progressBar.setAttribute('aria-valuenow', progressPercentage);
+}
+
+function updateTimerProgress(questionIndex) {
+    const timeLeft = questionData[questionIndex].timeLeft;
+    const totalTime = questionData[questionIndex].totalTime;
+    const progressPercentage = (timeLeft / totalTime) * 100;
+    
+    const timerBar = document.getElementById('timer-progress');
+    timerBar.style.width = `${progressPercentage}%`;
+    timerBar.setAttribute('aria-valuenow', progressPercentage);
+    
+    // Update color based on time remaining
+    if (progressPercentage > 66) {
+        timerBar.className = 'progress-bar bg-success';
+    } else if (progressPercentage > 33) {
+        timerBar.className = 'progress-bar bg-warning';
+    } else {
+        timerBar.className = 'progress-bar bg-danger';
+    }
+}
+
+function checkAnswerStatus(questionIndex) {
+    const question = questions[questionIndex];
+    if (question.type === 'mcq') {
+        const selected = document.querySelector(`input[name="question_${questionIndex}"]:checked`);
+        questionData[questionIndex].hasAnswer = !!selected;
+    } else {
+        const input = document.querySelector(`[name="question_${questionIndex}"]`);
+        questionData[questionIndex].hasAnswer = input && input.value.trim() !== '';
+    }
+    updateQuestionProgress();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize carousel
+    carouselInstance = new bootstrap.Carousel(document.getElementById('quizCarousel'), {
+        interval: false,
+        wrap: false
+    });
+
+    // Add input event listeners to all answer fields
+    questions.forEach((question, index) => {
+        if (question.type === 'mcq') {
+            const options = document.querySelectorAll(`input[name="question_${index}"]`);
+            options.forEach(option => {
+                option.addEventListener('change', () => {
+                    checkAnswerStatus(index);
+                });
+            });
+        } else {
+            const input = document.querySelector(`[name="question_${index}"]`);
+            if (input) {
+                input.addEventListener('input', () => {
+                    checkAnswerStatus(index);
+                });
+            }
+        }
+    });
+
+    // Listen for carousel slide event
+    document.getElementById('quizCarousel').addEventListener('slide.bs.carousel', function (e) {
+        clearInterval(timer);
+        if (questionData[currentQuestionIndex].startTime) {
+            const timeSpent = Math.round((Date.now() - questionData[currentQuestionIndex].startTime) / 1000);
+            questionData[currentQuestionIndex].timeSpent += timeSpent;
+        }
+        checkAnswerStatus(currentQuestionIndex);
+    });
+
+    // Listen for carousel slid event (after slide complete)
+    document.getElementById('quizCarousel').addEventListener('slid.bs.carousel', function (e) {
+        const questionIndex = parseInt(e.relatedTarget.dataset.questionIndex);
+        currentQuestionIndex = questionIndex;
+        document.getElementById('current-question').textContent = currentQuestionIndex + 1;
+        
+        if (!questionData[currentQuestionIndex].startTime) {
+            questionData[currentQuestionIndex].startTime = Date.now();
+        }
+        startTimer(currentQuestionIndex);
+        updateNavigationButtons();
+        checkAnswerStatus(currentQuestionIndex);
+    });
+});
+
+// document.getElementById('start-quiz').addEventListener('click', function() {
+//     document.getElementById('start-section').style.display = 'none';
+//     document.getElementById('quiz-section').style.display = 'block';
+//     questionData[0].startTime = Date.now();
+//     setTimeout(() => {
+//         startTimer(0);
+//         checkAnswerStatus(0);
+//     }, 500);
+// });
+
+document.getElementById('start-quiz').addEventListener('click', function() {
+    fetch('/start-quiz', { method: 'POST' })
+        .then(() => {
+            // Hide start section, show quiz section
+            document.getElementById('start-section').style.display = 'none';
+            document.getElementById('quiz-section').style.display = 'block';
+            questionData[0].startTime = Date.now();
+            setTimeout(() => {
+                startTimer(0);
+                checkAnswerStatus(0);
+            }, 500);
+        })
+        .catch(err => console.error('Failed to start quiz:', err));
+});
+
+function startTimer(questionIndex) {
+    clearInterval(timer);
+    updateTimerDisplay();
+    updateTimerProgress(questionIndex);
+    
+    timer = setInterval(() => {
+        questionData[questionIndex].timeLeft--;
+        updateTimerDisplay();
+        updateTimerProgress(questionIndex);
+        
+        if (questionData[questionIndex].timeLeft <= 0) {
+            clearInterval(timer);
+            questionData[questionIndex].completed = true;
+            updateQuestionProgress();
+            if (currentQuestionIndex < questions.length - 1) {
+                nextQuestion();
+            } else {
+                submitQuiz();
+            }
+        }
+    }, 1000);
+}
+
+function updateTimerDisplay() {
+    document.getElementById('timer').textContent = questionData[currentQuestionIndex].timeLeft;
+}
+
+function prevQuestion() {
+    if (currentQuestionIndex > 0) {
+        carouselInstance.prev();
+    }
+}
+
+function nextQuestion() {
+    if (currentQuestionIndex < questions.length - 1) {
+        carouselInstance.next();
+    }
+}
+
+function updateNavigationButtons() {
+    const prevButton = document.getElementById('prev-button');
+    const nextButton = document.getElementById('next-button');
+    const submitButton = document.getElementById('submit-button');
+    
+    prevButton.style.display = currentQuestionIndex === 0 ? 'none' : 'block';
+    nextButton.style.display = currentQuestionIndex === questions.length - 1 ? 'none' : 'block';
+    submitButton.style.display = currentQuestionIndex === questions.length - 1 ? 'block' : 'none';
+}
+
+function submitQuiz() {
+    clearInterval(timer);
+
+    // Disable the submit button to prevent multiple submissions
+    document.getElementById('submit-button').disabled = true;
+
+    // Record final time spent on last question
+    if (questionData[currentQuestionIndex].startTime) {
+        const timeSpent = Math.round((Date.now() - questionData[currentQuestionIndex].startTime) / 1000);
+        questionData[currentQuestionIndex].timeSpent += timeSpent;
+    }
+
+    questionData[currentQuestionIndex].completed = true;
+    updateQuestionProgress();
+
+    const answers = [];
+
+    // Collect all answers with timing data
+    for(let i = 0; i < questions.length; i++) {
+        const questionType = questions[i].type;
+        let answer;
+
+        if (questionType === 'mcq') {
+            const selected = document.querySelector(`input[name="question_${i}"]:checked`);
+            answer = selected ? selected.value : null;
+        } else {
+            const input = document.querySelector(`[name="question_${i}"]`);
+            answer = input ? input.value : null;
+        }
+
+        answers.push({
+            questionIndex: i,
+            answer: answer,
+            type: questionType,
+            timeSpent: questionData[i].timeSpent,
+            timeRemaining: questionData[i].timeLeft,
+            completed: questionData[i].completed || questionData[i].hasAnswer
+        });
+    }
+
+    // Post data to server
+    fetch('/quiz', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ answers })
+    });
+}
+
+// Initialize navigation buttons
+updateNavigationButtons();
+
+// Update total questions display
+document.getElementById('total-questions').textContent = questions.length;
+</script>
+{% endblock %}
