@@ -147,6 +147,7 @@ def start_quiz():
     if user.get("quiz", False):
         return jsonify({"message": "You have already started the quiz"})
     else:
+        db.set_collection("code-prelims-users")
         db.update({"username": request.cookies.get("username")},{"$set":{"quiz": True}})
         return jsonify({"message": "Quiz started successfully"})  
 
