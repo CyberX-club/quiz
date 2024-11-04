@@ -316,6 +316,8 @@ def admin_f(func):
         
         else:
             db.update({"username": username}, {"$set":{"quiz": False}})
+            db.set_collection("code-prelims-submissions")
+            db.delete({"username": username})
             return jsonify({"message": "Quiz reset successfully"})
 
 @app.route('/admin')
