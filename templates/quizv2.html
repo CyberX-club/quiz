@@ -309,7 +309,18 @@ function submitQuiz() {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({ answers })
+    })
+    .then(() => {
+        // Redirect to home page
+        alert('Quiz Submitted!');
+        window.location.href = '/';
+    })
+    .catch(err => {
+        console.error('Failed to submit quiz:', err)
+        alert('An error occurred while submitting the quiz. Please try again.');
+        window.location.href = '/quiz';
     });
+
 }
 
 // Initialize navigation buttons
