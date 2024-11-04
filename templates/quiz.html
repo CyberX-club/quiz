@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Quiz</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script>
+        let questionIndex = 0;
+        let timeLeft = 30;  // Set time limit per question in seconds
+
+        function startTimer() {
+            timeLeft = 30;
+            const timerElement = document.getElementById("timer");
+            timerElement.innerText = `Time left: ${timeLeft} seconds`;
+
+            const timer = setInterval(() => {
+                timeLeft--;
+                timerElement.innerText = `Time left: ${timeLeft} seconds`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    nextQuestion();
+                }
+            }, 1000);
+        }
+
+        function nextQuestion() {
+            const questions = document.querySelectorAll(".question-block");
+            if (questionIndex < questions.length - 1) {
+                questions[questionIndex].classList.add("d-none");
+                questionIndex++;
+                questions[questionIndex].classList.remove("d-none");
+                startTimer();
+            } else {
+                document.getElementById("quizForm").submit();
+            }
+        }
+
+        window.onload = () => {
+            startTimer();
+        };
+    </script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Quiz</h2>
+        <form id="quizForm" method="POST" action="{{ url_for('submit_quiz') }}">
+            {% for question in questions %}
+                <div class="question-block {% if not loop.first %}d-none{% endif %}">
+                    <img src="{{ url_for('static', filename='images/' + question.question_image) }}" alt="Question Image">
+                    <input type="text" name="{{ question.id }}" placeholder="Your Answer" required>
+                </div>
+            {% endfor %}
+            <p id="timer">Time left: 30 seconds</p>
+            <button type="button" class="btn btn-primary mt-3" onclick="nextQuestion()">Next Question</button>
+        </form>
+    </div>
+</body>
+</html>
