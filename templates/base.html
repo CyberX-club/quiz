@@ -31,6 +31,9 @@
                 <li class="nav-item">
                     <a class="nav-link" href="https://cyberxclub.com">About Us</a>
                 </li>
+                <li class="nav-item" id="login-item" style="display: none;">
+                    <a class="nav-link" href="/login">Login</a>
+                </li>
             </ul>
         </div>
     </nav>
@@ -47,9 +50,28 @@
         </div>
     </footer>
 
-    <!-- Bootstrap and jQuery JS -->
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Check for username cookie and show login link if not present -->
+    <script>
+        // Function to get the value of a cookie by name
+        function getCookie(name) {
+            let cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + '=')) {
+                    return cookie.substring(name.length + 1);
+                }
+            }
+            return null;
+        }
+
+        // Check if username cookie exists; if not, show the login link
+        document.addEventListener('DOMContentLoaded', function () {
+            const loginItem = document.getElementById('login-item');
+            if (!getCookie('username')) {
+                loginItem.style.display = 'block';
+            }
+        });
+    </script>
 
     {% block scripts %}{% endblock %}
 </body>
