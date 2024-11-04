@@ -158,7 +158,7 @@ def quiz():
 
     # if quiz started already
     db.set_collection('code-prelims-users')
-    is_quiz = db.get_object({"username": request.cookies.get('username')}).compile()
+    is_quiz = db.get_object({"username": request.cookies.get('username')}).compile().get('quiz',False)
 
     if is_quiz :
         return jsonify({"message": "Quiz already started!.Please contact your organizer to reset the switch if you feel this is a mistake."})
