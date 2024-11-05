@@ -154,17 +154,21 @@ def start_quiz():
 
 @app.route("/quiz", methods=["GET", "POST"])
 @login_required
-@single_submit
+# @single_submit
 def quiz():
 
     # if quiz started already
-    db.set_collection('code-prelims-users')
-    is_quiz = db.get_object({"username": request.cookies.get('username')}).compile().get('quiz',False)
-
-    if is_quiz :
-        return jsonify({"message": "Quiz already started!.Please contact your organizer to reset the switch if you feel this is a mistake."})
 
     if request.method == "POST":
+        # db.set_collection('code-prelims-users')
+        # is_quiz = db.get_object({"username": request.cookies.get('username')}).compile().get('quiz',False)
+        # print(f"Quiz started : {is_quiz}")
+
+        # if is_quiz :
+        #     return jsonify({"message": "Quiz already started!.Please contact your organizer to reset the switch if you feel this is a mistake."})
+
+        print("Pushing to DB")
+
         # get 'answers' from post data 
         data = request.json
         answers = data['answers']
@@ -173,8 +177,12 @@ def quiz():
         db.set_collection('code-prelims-submissions')
         answer = DbObject(answers_schema)
         
+
+        
         answer.add(("username", request.cookies.get("username")))
-        answer.add(("answers", answers))
+        answer.add(("answers", answers)) 
+
+        print(f"Username : {request.cookies.get('username')}")
 
         db.insert(answer)
 
@@ -214,6 +222,13 @@ def quiz():
         })
 
     
+    db.set_collection('code-prelims-users')
+    is_quiz = db.get_object({"username": request.cookies.get('username')}).compile().get('quiz',False)
+
+    if is_quiz :
+        return jsonify({"message": "Quiz already started!.Please contact your organizer to reset the switch if you feel this is a mistake."})
+
+
     return render_template("quizv2.html",questions=questions)
 
 
